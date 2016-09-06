@@ -3,8 +3,9 @@ var fs = require('fs');
 var wfi = {}
 
 wfi.infoByFilename = function(filename, cb){
-  var stats = fs.statSync(filename)
-  var buffer = new Buffer(40);  // first 40 bytes are RIFF header
+  var stats = fs.statSync(filename);
+  var HEADER_SIZE = 800;
+  var buffer = new Buffer(HEADER_SIZE);  // first 40 bytes are RIFF header
   fs.open(filename, 'r', function(err, fd) {
     if(err) return cb(err);  // error probably TODO:check this!
 
@@ -32,7 +33,7 @@ wfi.infoByFilename = function(filename, cb){
       //['sub_chunk2_size', 'integer', 4],
 
     ]
-    fs.read(fd, buffer, 0, 40, 0, function(err, num) {
+    fs.read(fd, buffer, 0, HEADER_SIZE, 0, function(err, num) {
 
       var i=0;
       var pointer = 0;
@@ -53,6 +54,12 @@ wfi.infoByFilename = function(filename, cb){
 
           read_result[read[0]] = buffer.readInt32LE(pointer, read[2])
           pointer = pointer + read[2];
+        }
+        // hack for protools WAV files - need to seek ahead
+        if (read[0] === 'fmt_identifier' && read_result[read[0]] === 'JUNK') {
+          // console.log('yep');
+          i--;
+          pointer = 722;
         }
         if(i < reads.length) { return read_wav()}
         else { return post_process(); }
