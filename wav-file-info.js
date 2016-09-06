@@ -4,7 +4,7 @@ var wfi = {}
 
 wfi.infoByFilename = function(filename, cb){
   var stats = fs.statSync(filename);
-  var HEADER_SIZE = 800;
+  var HEADER_SIZE = 764;
   var buffer = new Buffer(HEADER_SIZE);  // first 40 bytes are RIFF header
   fs.open(filename, 'r', function(err, fd) {
     if(err) return cb(err);  // error probably TODO:check this!
@@ -57,12 +57,16 @@ wfi.infoByFilename = function(filename, cb){
         }
         // hack for protools WAV files - need to seek ahead
         if (read[0] === 'fmt_identifier' && read_result[read[0]] === 'JUNK') {
-          // console.log('yep');
           i--;
+          // hard-coding the location we need
           pointer = 722;
         }
         if(i < reads.length) { return read_wav()}
-        else { return post_process(); }
+        else { 
+          // make sure to close our file
+          fs.close(fd);
+          return post_process(); 
+        }
 
       }
       //console.log(i)
@@ -70,7 +74,6 @@ wfi.infoByFilename = function(filename, cb){
     }); // end fs.read
 
     function post_process(){
-      fs.close();
       var error = false;
       var invalid_reasons = []
 
