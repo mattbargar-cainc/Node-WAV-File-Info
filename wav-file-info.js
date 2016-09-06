@@ -70,6 +70,7 @@ wfi.infoByFilename = function(filename, cb){
     }); // end fs.read
 
     function post_process(){
+      fs.close();
       var error = false;
       var invalid_reasons = []
 
